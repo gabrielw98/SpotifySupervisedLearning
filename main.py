@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import cross_val_score
 import time
 
+
 # NN packages
 from sklearn.neural_network import MLPRegressor
 
@@ -126,7 +127,7 @@ class KernelRidgeRegressor():
         print(krr.best_params_)
         return krr.best_params_
 
-    def tune_kernel(self, X_train, X_test, y_train, y_test):
+    def graph_kernel(self, X_train, X_test, y_train, y_test):
         kernels = ("rbf", "poly", "laplacian")
         y_pos = numpy.arange(len(kernels))
         performance = []
@@ -152,7 +153,7 @@ class KernelRidgeRegressor():
         plt.show()
         return max_kernel
 
-    def tune_alpha(self, X_train, X_test, y_train, y_test):
+    def graph_alpha(self, X_train, X_test, y_train, y_test):
         alphas = numpy.arange(0, 2.5, 0.1)
         performance = []
         max_value = 0.0
@@ -176,7 +177,7 @@ class KernelRidgeRegressor():
         plt.show()
         return max_alpha
 
-    def tune_gamma(self, X_train, X_test, y_train, y_test):
+    def graph_gamma(self, X_train, X_test, y_train, y_test):
         gamma_list = numpy.arange(0.01, 0.2, 0.01)
         y_pos = numpy.arange(len(gamma_list))
         performance = []
@@ -200,13 +201,12 @@ class KernelRidgeRegressor():
         plt.show()
         return max_gamma
 
-    # Hyper parameters: kernel
+    # Hyper parameters: kernel, gamma, alpha
     def predict(self, params, X_train, X_test, y_train, y_test):
         krr = KernelRidge(kernel="laplacian", gamma=params["gamma"], alpha=params["alpha"])
         krr.fit(X_train, y_train)
-        krr.predict(X_test)
         print(krr.score(X_test, y_test))
-        cross_val_scores = cross_val_score(krr, X_train, y_train, cv=20)
+        #cross_val_scores = cross_val_score(krr, X_train, y_train, cv=20)
         #print(cross_val_scores)
 
 class KNR():
@@ -220,18 +220,17 @@ class KNR():
         '''
 
     def tune_hyper_params(self, X_train, X_test, y_train, y_test):
-        knn = KNeighborsRegressor(n_neighbors=25, weights="distance", p=1)
+        knn = KNeighborsRegressor()
         params = {
-            "n_neighbors": range(1, 25, 1),
+            "n_neighbors": range(1, 30, 1),
             "weights": ["distance", "uniform"],
             "p": [1, 2]
         }
         knn = GridSearchCV(knn, params, n_jobs=-1)
         knn.fit(X_train, y_train)
-        print(knn.best_params_)
         return knn.best_params_
 
-    def tune_weights(self, X_train, X_test, y_train, y_test):
+    def graph_weights(self, X_train, X_test, y_train, y_test):
         weights_list = ("distance", "uniform")
 
         y_pos = numpy.arange(len(weights_list))
@@ -253,26 +252,9 @@ class KNR():
         plt.title('Weight Hyperparameter')
         plt.show()
 
-    def predict(self, params, X_train, X_test, y_train, y_test):
+    def graph_neighbors(self, X_train, X_test, y_train, y_test):
         k_values = []
         scores_array = []
-
-        '''knn = KNeighborsRegressor(n_neighbors= 25, weights="distance", p=1)
-        params = {
-            "n_neighbors": range(1,25, 1),
-            "weights" : ["distance", "uniform"],
-            "p": [1,2]
-        }
-        knn = GridSearchCV(knn, params, n_jobs=-1)
-        knn.fit(X_train, y_train)
-        print(knn.best_params_)'''
-
-        knn = KNeighborsRegressor(n_neighbors=params["n_neighbors"], weights=params["weights"], p=params["p"])
-        knn.fit(X_train, y_train)
-        scores = cross_val_score(knn, X_test, y_test, cv=10)
-        print(scores.mean())
-        print(knn.score(X_test, y_test))
-        '''
         for i in range(5, 50):
             k_values.append(i)
             knn = KNeighborsRegressor(n_neighbors=i, weights="distance", p=1)
@@ -282,13 +264,22 @@ class KNR():
             scores = cross_val_score(knn, X_test, y_test, cv=10)
             scores_array.append(knn.score(X_test, y_test))
             #score = knn.score(X_test, y_test)
-            print(scores.mean())
             #scores_array.append(scores.mean())
         plt.title("Performance vs # Neighbors")
         plt.ylabel("Scores")
         plt.xlabel("# Neighbors")
         plt.plot(k_values, scores_array, "bo")
-        plt.show()'''
+        plt.show()
+
+    def predict(self, params, X_train, X_test, y_train, y_test):
+        knn = KNeighborsRegressor(n_neighbors=params["n_neighbors"], weights=params["weights"], p=params["p"])
+        knn.fit(X_train, y_train)
+        scores = cross_val_score(knn, X_test, y_test, cv=10)
+        print(scores.mean())
+        print(numpy.std(scores))
+
+        print("Scores:", knn.score(X_test, y_test))
+
 
 
 class NeuralNetwork():
@@ -304,6 +295,7 @@ class NeuralNetwork():
         mlp = MLPRegressor(hidden_layer_sizes=params["hidden_layer_sizes"], activation=params["activation"],
                            solver=params["solver"], alpha=params["alpha"])
         mlp.fit(X_train, y_train)
+
         print("Score:", mlp.score(X_test, y_test))
 
     def tune_hyper_params(self, X_train, X_test, y_train, y_test):
@@ -311,8 +303,8 @@ class NeuralNetwork():
         params = {
             "activation": ["tanh", "identity", "logistic", "relu"],
             "solver": ["lbfgs", "sgd", "adam"],
-            "hidden_layer_sizes" : [[10,10], [20,20], [30,30], [40,40], [50,50],
-                                    [10,10,10], [20,20,20], [30,30,30], [40,40,40], [50,50,50]],
+            "hidden_layer_sizes" : [[10,10], [20,20], [30,30],
+                                    [10,10,10], [20,20,20], [30,30,30]],
             "alpha" : [0.0001, 1e-5, 0.01, 0.001]
         }
         mlp = GridSearchCV(mlp, params, n_jobs=-1)
@@ -320,24 +312,7 @@ class NeuralNetwork():
         print(mlp.best_params_)
         return mlp.best_params_
 
-    def choose_hyperparameters(self, X_train, X_test, y_train, y_test):
-        activation_types = ["identity", "logistic", "tanh", "relu"]
-        solver_types = ["adam", "sgd"]
-        print("Comparing parameters")
-        for activation in activation_types:
-            for solver in solver_types:
-                print("Activation: ", activation, "\nSolver: ", solver)
-                mlp = MLPRegressor(hidden_layer_sizes=(100, 50, 25, 10), activation=activation, solver=solver,
-                                   max_iter=10000)
-                mlp.fit(X_train, y_train)
-                print("\n")
-                predict_train = mlp.predict(X_train)
-                #print(predict_train)
-                predict_test = mlp.predict(X_test)
-                #print(predict_test)
-                print(mlp.score(X_test, y_test))
-
-    def tune_hidden_layers(self, X_train, X_test, y_train, y_test):
+    def graph_hidden_layers(self, X_train, X_test, y_train, y_test):
         layers = numpy.arange(1, 100, 1)
         performance = []
         max_value = 0.0
@@ -361,7 +336,7 @@ class NeuralNetwork():
         plt.show()
         return max_layer
 
-    def tune_activation(self, X_train, X_test, y_train, y_test):
+    def graph_activation(self, X_train, X_test, y_train, y_test):
         activation_types = ("identity", "logistic", "tanh", "relu")
         y_pos = numpy.arange(len(activation_types))
         performance = []
@@ -387,7 +362,7 @@ class NeuralNetwork():
         plt.show()
         return max_kernel
 
-    def tune_solver(self, X_train, X_test, y_train, y_test):
+    def graph_solver(self, X_train, X_test, y_train, y_test):
         solver_types = ("lbfgs", "sgd", "adam")
         y_pos = numpy.arange(len(solver_types))
         performance = []
@@ -414,71 +389,60 @@ class NeuralNetwork():
         return max_kernel
 
 
-def main():
+def main(algorithm):
     X_train, X_test, y_train, y_test = load_data()
 
     # Check if the data set is trivial - 0.253
-    is_trivial(X_train, y_train)
+    #is_trivial(X_train, y_train)
 
-    '''
-    # KNR - 0.379
-    knr = KNR()
-    #knr.tune_weights(X_train, X_test, y_train, y_test)
-    #knr.tune_hyper_params(X_train, X_test, y_train, y_test)
-    start_time = time.time()
-    best_params = knr.tune_hyper_params(X_train, X_test, y_train, y_test)
-    knr.predict(best_params, X_train, X_test, y_train, y_test)
-    print("--- %s seconds ---" % (time.time() - start_time))'''
+    if algorithm == "KNR":
+        # KNR - 0.379
+        knr = KNR()
 
-    '''
-    # KRR - 0.580
-    krr = KernelRidgeRegressor()
-    start_time = time.time()
-    params = krr.tune_hyper_params(X_train, X_test, y_train, y_test)
-    print("params:", params)
-    krr.predict(params, X_train, X_test, y_train, y_test)
-    print("--- %s seconds ---" % (time.time() - start_time))
-    #krr.predict()
-    #kernel = krr.tune_kernel(X_train, X_test, y_train, y_test)
-    #alpha = krr.tune_alpha(X_train, X_test, y_train, y_test)
-    #gamma = krr.tune_gamma(X_train, X_test, y_train, y_test)
-    #print(alpha, gamma, kernel)
-    #krr.predict(kernel, alpha, gamma, X_train, X_test, y_train, y_test)
+        # Graphs
+        knr.graph_weights(X_train, X_test, y_train, y_test)
+        knr.graph_neighbors(X_train, X_test, y_train, y_test)
 
-    #krr.grid_search(X_train, X_test, y_train, y_test)
-    #krr.predict(X_train, X_test, y_train, y_test)'''
+        # Fitting to best params
+        start_time = time.time()
+        best_params = knr.tune_hyper_params(X_train, X_test, y_train, y_test)
+        print("params:", best_params)
+        knr.predict(best_params, X_train, X_test, y_train, y_test)
+        print("--- %s seconds ---" % (time.time() - start_time))
+    elif algorithm == "KRR":
+        # KRR - 0.580
+        krr = KernelRidgeRegressor()
+
+        # Graph individual hyper parameters
+        kernel = krr.graph_kernel(X_train, X_test, y_train, y_test)
+        alpha = krr.graph_alpha(X_train, X_test, y_train, y_test)
+        gamma = krr.graph_gamma(X_train, X_test, y_train, y_test)
+        print("alpha:", alpha, "\ngamma:", gamma, "\nkernel:", kernel)
 
 
-    # NN 0.505
-    nn = NeuralNetwork()
-    start_time = time.time()
-    #print(nn.tune_solver(X_train, X_test, y_train, y_test))
-    #print(nn.tune_activation(X_train, X_test, y_train, y_test))
-    #print(nn.tune_hidden_layers(X_train, X_test, y_train, y_test))
-    params = nn.tune_hyper_params(X_train, X_test, y_train, y_test)
-    print("params:", params)
-    nn.predict(params, X_train, X_test, y_train, y_test)
-    print("--- %s seconds ---" % (time.time() - start_time))
+        start_time = time.time()
+        params = krr.tune_hyper_params(X_train, X_test, y_train, y_test)
+        print("params:", params)
+        krr.predict(params, X_train, X_test, y_train, y_test)
+        print("--- %s seconds ---" % (time.time() - start_time))
 
-    #nn.choose_hyperparameters(X_train, X_test, y_train, y_test)
+    elif algorithm == "NN":
+        # NN 0.505
+        nn = NeuralNetwork()
+        start_time = time.time()
+        print(nn.graph_solver(X_train, X_test, y_train, y_test))
+        print(nn.graph_activation(X_train, X_test, y_train, y_test))
+        print(nn.graph_hidden_layers(X_train, X_test, y_train, y_test))
+
+        params = nn.tune_hyper_params(X_train, X_test, y_train, y_test)
+        print("params:", params)
+        nn.predict(params, X_train, X_test, y_train, y_test)
+        print("--- %s seconds ---" % (time.time() - start_time))
+
 
 if __name__ == '__main__':
-    main()
-
-    '''
-    X_train, X_test, y_train, y_test = load_data_classification()
-
-    clf = MLPClassifier(solver='lbfgs', activation='relu',
-                        hidden_layer_sizes=(30, 20, 20, 20), random_state=100)
-
-    scaler = StandardScaler()
-    scaler.fit(X_train)
-    X_train = scaler.transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    clf.fit(X_train, y_train)
-    prediction = clf.predict(X_test)
-    print(prediction)
-    print(len(prediction))
-    print(len(Counter(prediction).keys()))
-    print(clf.score(X_test, y_test))'''
+    print("--Welcome to the Spotify Song Danceability Predictor--")
+    print("To recreate graphs and make danceability predictions, choose any of the following algorithms")
+    print("KRR, KNR, NN")
+    user_input = input()
+    main(user_input)
