@@ -32,6 +32,7 @@ def is_trivial(X_train, y_train):
     reg = LinearRegression().fit(X_train, y_train)
     score = reg.score(X_train, y_train)
     print("Linear Seperability Score:", score)
+    print("TODO")
     return score > 0.5
 
 def load_data():
