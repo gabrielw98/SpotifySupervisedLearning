@@ -27,12 +27,14 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler  # doctest: +SKIP
 
+# TODO
+# Create the features for the genre and the keysgit s
+
 
 def is_trivial(X_train, y_train):
     reg = LinearRegression().fit(X_train, y_train)
     score = reg.score(X_train, y_train)
     print("Linear Seperability Score:", score)
-    print("TODO")
     return score > 0.5
 
 def load_data():
