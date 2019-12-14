@@ -40,36 +40,46 @@ def is_trivial(X_train, y_train):
 def load_data():
     print("Loading data...")
     df = pandas.read_csv("songs.csv")
-    genres = ["Pop", "Dance", "Hip-Hop", "Country", "Electronic", "Alternative", "Folk", "Blues", "Movie", "Opera", "Indie", "Jazz", "Classical", "R&B"]
+    genres = ["Pop", "Dance", "Hip-Hop", "Country", "Electronic", "R&B", "Opera", "Classical"]
 
-    '''is_popular = df["popularity"] > 60
-    df = df[is_popular]'''
+    is_popular = df["popularity"] > 60
+    df = df[is_popular]
     df = df[df["genre"].isin(genres)]
 
-    print(type(df["key"]))
-    print(set(df["key"]))
+    genre_dict = {}
+    key_dict = {}
+
     for key in set(df["key"]):
-        feature_name = "keyIs" + key
-        print(feature_name)
         key_feature = df["key"] == key
-        print(key_feature.mean(), "\n")
-        df[feature_name] = key_feature
+        print(key)
+        filtered_df = df[key_feature]
+        average_key_danceability = filtered_df["danceability"].mean()
+        print(filtered_df["danceability"].mean(), "\n")
+        df["key"].replace([key], average_key_danceability, inplace=True)
+        key_dict[key] = filtered_df["danceability"].mean()
 
     for genre in set(df["genre"]):
-        feature_name = "genreIs" + genre
-        print(feature_name)
         genre_feature = df["genre"] == genre
-        print(genre_feature.mean(), "\n")
-        df[feature_name] = genre_feature
+        print(genre)
+        filtered_df = df[genre_feature]
+        average_genre_danceability = filtered_df["danceability"].mean()
+        df["genre"].replace([genre], average_genre_danceability, inplace=True)
+        print(filtered_df["danceability"].mean(), "\n")
+        genre_dict[genre] = filtered_df["danceability"].mean()
 
+    plt.bar(range(len(genre_dict)), list(genre_dict.values()), align='center', alpha=0.5)
+    plt.xticks(range(len(genre_dict)), list(genre_dict.keys()))
+    plt.ylabel('Danceability')
+    plt.xlabel('Genre')
+    plt.title('Danceability Of Each Genre')
+    plt.show()
 
-    graph_label_columns(df)
+    print(df)
 
-    X = df.drop(columns=["danceability", "genre", "artist_name", "track_name", "key", "mode", "time_signature"])
+    X = df.drop(columns=["danceability", "artist_name", "track_name", "mode", "time_signature"])
     y = df["danceability"]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
-
 
     #determine_important_features(X_train, X_test, y_train, y_test)
 
@@ -77,8 +87,6 @@ def load_data():
     scaler.fit(X_train)
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
-
-
 
     return X_train, X_test, y_train, y_test
 
@@ -107,17 +115,22 @@ def graph_label_columns(df):
     key_dict = {}
 
     for feature in df.keys():
-        if "genreIs" in feature:
-
-            print(feature)
-
+        if "genre" in feature:
             feature_filter = df[feature]
             filtered_df = df[feature_filter]
             genre_dict[feature] = filtered_df["danceability"].mean()
-        elif "keyIs" in feature:
+        elif "key" in feature:
             feature_filter = df[feature]
             filtered_df = df[feature_filter]
             key_dict[feature] = filtered_df["danceability"].mean()
+    print(genre_dict.keys())
+    print(genre_dict.values())
+
+    plt.bar(genre_dict.keys(), genre_dict.values(), align='center', alpha=0.5)
+    #plt.xticks(y_pos, weights_list)
+    plt.ylabel('Danceability')
+    plt.xlabel('Genre')
+    plt.title('Danceability Of Each Genre')
 
     print(key_dict)
     print(genre_dict)
@@ -131,11 +144,8 @@ def determine_important_features(X_train, X_test, y_train, y_test):
         x_train_d = X_train[[feature]]
         y_train_d = y_train
         x_test_d = X_test[[feature]]
-
         krr = KernelRidge(kernel="laplacian", alpha=0.7, gamma=0.04)
         krr.fit(x_train_d, y_train_d)
-        krr.predict(x_test_d)
-
         score = krr.score(x_test_d, y_test)
 
         print("feature:", feature, "score:", score)
@@ -481,11 +491,11 @@ def main(algorithm):
 
 
 if __name__ == '__main__':
-    X_train, X_test, y_train, y_test = load_data()
+    #X_train, X_test, y_train, y_test = load_data()
 
-    '''
+
     print("--Welcome to the Spotify Song Danceability Predictor--")
     print("To recreate graphs and make danceability predictions, choose any of the following algorithms")
     print("KRR, KNR, NN")
     user_input = input()
-    main(user_input)'''
+    main(user_input)
