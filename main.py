@@ -28,7 +28,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler  # doctest: +SKIP
 
 # TODO
-# Create the features for the genre and the keysgit s
+# Create the features for the genre and the key
 
 
 def is_trivial(X_train, y_train):
@@ -40,16 +40,36 @@ def is_trivial(X_train, y_train):
 def load_data():
     print("Loading data...")
     df = pandas.read_csv("songs.csv")
-    genres = ["Pop", "Dance", "Hip-Hop", "Country"]
+    genres = ["Pop", "Dance", "Hip-Hop", "Country", "Electronic", "Alternative", "Folk", "Blues", "Movie", "Opera", "Indie", "Jazz", "Classical", "R&B"]
 
-    is_popular = df["popularity"] > 60
-    df = df[is_popular]
+    '''is_popular = df["popularity"] > 60
+    df = df[is_popular]'''
     df = df[df["genre"].isin(genres)]
+
+    print(type(df["key"]))
+    print(set(df["key"]))
+    for key in set(df["key"]):
+        feature_name = "keyIs" + key
+        print(feature_name)
+        key_feature = df["key"] == key
+        print(key_feature.mean(), "\n")
+        df[feature_name] = key_feature
+
+    for genre in set(df["genre"]):
+        feature_name = "genreIs" + genre
+        print(feature_name)
+        genre_feature = df["genre"] == genre
+        print(genre_feature.mean(), "\n")
+        df[feature_name] = genre_feature
+
+
+    graph_label_columns(df)
 
     X = df.drop(columns=["danceability", "genre", "artist_name", "track_name", "key", "mode", "time_signature"])
     y = df["danceability"]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
+
 
     #determine_important_features(X_train, X_test, y_train, y_test)
 
@@ -57,6 +77,8 @@ def load_data():
     scaler.fit(X_train)
     X_train = scaler.transform(X_train)
     X_test = scaler.transform(X_test)
+
+
 
     return X_train, X_test, y_train, y_test
 
@@ -80,6 +102,28 @@ def load_data_classification():
 
     return X_train, X_test, y_train, y_test
 
+def graph_label_columns(df):
+    genre_dict = {}
+    key_dict = {}
+
+    for feature in df.keys():
+        if "genreIs" in feature:
+
+            print(feature)
+
+            feature_filter = df[feature]
+            filtered_df = df[feature_filter]
+            genre_dict[feature] = filtered_df["danceability"].mean()
+        elif "keyIs" in feature:
+            feature_filter = df[feature]
+            filtered_df = df[feature_filter]
+            key_dict[feature] = filtered_df["danceability"].mean()
+
+    print(key_dict)
+    print(genre_dict)
+
+
+
 def determine_important_features(X_train, X_test, y_train, y_test):
     # Determine the important features
     print(X_train.keys())
@@ -91,12 +135,7 @@ def determine_important_features(X_train, X_test, y_train, y_test):
         krr = KernelRidge(kernel="laplacian", alpha=0.7, gamma=0.04)
         krr.fit(x_train_d, y_train_d)
         krr.predict(x_test_d)
-        score = krr.score(x_train_d, y_train)
 
-        '''knn = KNeighborsRegressor(n_neighbors=20, weights="distance", p=1)
-
-        # Fit the classifier to the data
-        knn.fit(x_train_d, y_train_d)'''
         score = krr.score(x_test_d, y_test)
 
         print("feature:", feature, "score:", score)
@@ -107,7 +146,6 @@ def determine_important_features(X_train, X_test, y_train, y_test):
         plt.plot(x_test_d, y_test, "ro")
         plt.plot(x_test_d, prediction, "bo")
         plt.show()
-
 
 
 
@@ -306,8 +344,7 @@ class NeuralNetwork():
         params = {
             "activation": ["tanh", "identity", "logistic", "relu"],
             "solver": ["lbfgs", "sgd", "adam"],
-            "hidden_layer_sizes" : [[10,10], [20,20], [30,30],
-                                    [10,10,10], [20,20,20], [30,30,30]],
+            "hidden_layer_sizes" : [[10,10,10], [20,20,20], [30,30,30]],
             "alpha" : [0.0001, 1e-5, 0.01, 0.001]
         }
         mlp = GridSearchCV(mlp, params, n_jobs=-1)
@@ -444,8 +481,11 @@ def main(algorithm):
 
 
 if __name__ == '__main__':
+    X_train, X_test, y_train, y_test = load_data()
+
+    '''
     print("--Welcome to the Spotify Song Danceability Predictor--")
     print("To recreate graphs and make danceability predictions, choose any of the following algorithms")
     print("KRR, KNR, NN")
     user_input = input()
-    main(user_input)
+    main(user_input)'''
